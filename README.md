@@ -25,6 +25,8 @@ Built with Vite, React 19 and Framer Motion. There is no router or backend. The 
 - Demo checkout (`src/components/Checkout.jsx`): a valid "Submit Application" opens an in-place checkout with UPI / Card / Net banking tabs, a simulated processing step, and a success or failure result with a demo transaction ID. Payment fields are pre-filled and read-only, so nobody can type real card details into it
 - Blog post, newsletter signup, copy-to-clipboard for bank and contact details
 
+- Thank-you email with receipt: after a successful demo payment, `src/email.js` builds the message and `EmailPreview.jsx` shows it on screen. Nothing is sent
+
 ## Where things live
 
 - `src/data.js`: all copy, project text, timeline, team, bank details. Edit content here.
@@ -34,6 +36,8 @@ Built with Vite, React 19 and Framer Motion. There is no router or backend. The 
 
 ## Important
 
-The checkout is a demo. No payment gateway, database or email service is connected, nothing is sent or saved, and the page says so. The newsletter signup works the same way. To take real donations, replace `Checkout.jsx` with a real gateway (for example Razorpay, which handles UPI, cards and net banking for Indian NGOs) behind your own backend, or use Wix Payments / Wix Forms.
+The checkout is a demo. No payment gateway, database or email service is connected, nothing is sent or saved, and the page says so. The newsletter signup works the same way.
+
+To send the thank-you email for real, do it on a server after the payment gateway confirms the payment (a webhook), not from the browser. Reuse `buildReceiptEmail()` in `src/email.js` for the content and send it with a transactional email service such as Resend, Postmark or Amazon SES. Sending from the browser would let anyone trigger receipts to any address. To take real donations, replace `Checkout.jsx` with a real gateway (for example Razorpay, which handles UPI, cards and net banking for Indian NGOs) behind your own backend, or use Wix Payments / Wix Forms.
 
 The timeline dates come from the live site's story and registration details. "Before 2019" events have no year on the original site, so they are labelled by event, not date.

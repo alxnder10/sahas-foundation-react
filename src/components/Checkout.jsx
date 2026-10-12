@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { buildReceiptEmail } from '../email'
+import { maskPan, money } from '../format'
+import EmailPreview from './EmailPreview'
 import Icon from './Icon'
 
 const METHODS = [
@@ -10,8 +13,6 @@ const METHODS = [
 
 const STEPS = ['Contacting demo payment gateway', 'Confirming transaction', 'Finishing up']
 
-const money = (n) => '₹' + Number(n).toLocaleString('en-IN')
-const maskPan = (pan) => (pan ? pan.slice(0, 2) + '******' + pan.slice(-2) : '')
 const newTxnId = () => 'DEMO-' + Math.random().toString(36).slice(2, 10).toUpperCase()
 
 function DemoField({ id, label, value }) {
@@ -184,6 +185,10 @@ export default function Checkout({ donation, onEdit, onFinish }) {
                     <dt>Status</dt>
                     <dd>Demo only, no money moved</dd>
                   </div>
+                  <div>
+                    <dt>Thank-you email</dt>
+                    <dd>Previewed below, not sent</dd>
+                  </div>
                 </dl>
                 <div className="result-actions">
                   <button className="btn btn-primary" onClick={onFinish}>
@@ -216,6 +221,8 @@ export default function Checkout({ donation, onEdit, onFinish }) {
           </AnimatePresence>
         </div>
       </div>
+
+      {phase === 'success' && txn && <EmailPreview email={buildReceiptEmail({ donation, txn, method })} />}
     </div>
   )
 }
