@@ -1,4 +1,8 @@
 node_modules
 dist
+.env
+.env.local
+server/outbox
+server/data
 .DS_Store
 Thumbs.db

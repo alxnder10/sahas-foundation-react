@@ -27,6 +27,35 @@ Built with Vite, React 19 and Framer Motion. There is no router or backend. The 
 
 - Thank-you email with receipt: after a successful demo payment, `src/email.js` builds the message and `EmailPreview.jsx` shows it on screen. Nothing is sent
 
+## Email bot (`server/`)
+
+A small Node service that sends the thank-you email with the receipt and auto-replies with the bill. The website works without it. Run it next to the site:
+
+```bash
+cp .env.example .env     # then edit
+npm run server           # http://localhost:8787
+```
+
+Then tell the site where it is by creating `.env.local` with `VITE_BOT_URL=http://localhost:8787` and restarting `npm run dev`. The live GitHub Pages build has no bot URL, so it only shows the on-screen preview.
+
+What it does:
+
+- `POST /api/donations`: stores the donation (name, email, amount, masked PAN) and emails the thank-you with the receipt. The site calls this after a successful demo payment. A repeated transaction ID is ignored, so it can't be used to re-send.
+- `POST /api/bill`: emails the bill for a transaction, only if the email matches the one on file. The chat bot's "Email me the bill" button uses this.
+- `POST /api/inbound`: the reply bot. Point your email provider's inbound webhook here (Resend, Postmark, SendGrid, Mailgun, or a forwarding script) with JSON `{ from, subject, text }`. If someone replies with "bill", "receipt" or "invoice", it emails them their latest bill. Anything else gets a short help reply. Senders with no donation on file are told so.
+
+Safety defaults:
+
+- **Preview mode:** with no `SMTP_HOST`, nothing is delivered. Every email is written to `server/outbox/` as an `.eml` file you can open in a mail client.
+- **Demo only:** payments are fake, so every email is marked `[DEMO]`, and even with SMTP set, real delivery goes only to the addresses in `DEMO_ALLOWED_RECIPIENTS`. Everyone else still gets the preview file.
+- **Webhook secret:** inbound requests need the `x-webhook-secret` header to match `INBOUND_SECRET`. Without SMTP configured they are accepted for local testing.
+- **Loop and abuse guards:** auto-submitted mail, no-reply senders and the bot's own address are ignored; 30 requests per 10 minutes per IP; 5 emails per recipient per day; request bodies capped; CORS limited to `ALLOWED_ORIGINS`.
+- **Stored data:** only name, email, amount, masked PAN, payment method and transaction, in `server/data/donations.json` (not committed).
+
+Not included: reading a mailbox over IMAP (use an inbound webhook instead), and verification of real payments. The server trusts the browser's "payment succeeded" call, which is fine for a demo and not acceptable for real money. For real donations, create the donation record from your payment gateway's webhook instead, and remove the demo allow-list.
+
+Tested locally: all endpoints and guards in preview mode, and real SMTP delivery plus the allow-list and secret against a local test mail server. Not tested against a real mail provider or a real inbound webhook.
+
 ## Where things live
 
 - `src/data.js`: all copy, project text, timeline, team, bank details. Edit content here.

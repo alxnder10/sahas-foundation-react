@@ -1,9 +1,18 @@
 import { motion } from 'framer-motion'
 
-export default function EmailPreview({ email }) {
+const NOTE = {
+  none: 'This is the message a donor would receive after a successful payment. In this demo it is only shown here. Nothing was sent.',
+  sending: 'This is the message a donor would receive after a successful payment. Sending it through the email bot…',
+  sent: 'This is the message a donor receives after a successful payment. A copy marked DEMO was sent to the address above.',
+  preview: 'This is the message a donor would receive after a successful payment. The email bot saved it but did not deliver it (preview mode).',
+  error: 'This is the message a donor would receive after a successful payment. The email bot could not be reached, so nothing was sent.',
+}
+
+export default function EmailPreview({ email, status = 'none' }) {
   return (
-    <motion.section
+    <motion.div
       className="email-wrap"
+      role="region"
       aria-label="Thank-you email preview"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
@@ -12,7 +21,7 @@ export default function EmailPreview({ email }) {
       <div className="email-head">
         <span className="eyebrow">Auto-reply · demo</span>
         <h3>The thank-you email</h3>
-        <p>This is the message a donor would receive after a successful payment. In this demo it is only shown here. Nothing was sent.</p>
+        <p>{NOTE[status]}</p>
       </div>
 
       <article className="email">
@@ -61,6 +70,6 @@ export default function EmailPreview({ email }) {
           </p>
         </div>
       </article>
-    </motion.section>
+    </motion.div>
   )
 }

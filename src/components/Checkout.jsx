@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { botEnabled, sendThankYou } from '../botApi'
 import { buildReceiptEmail } from '../email'
 import { maskPan, money } from '../format'
+import BillBot from './BillBot'
 import EmailPreview from './EmailPreview'
 import Icon from './Icon'
 
@@ -12,6 +14,15 @@ const METHODS = [
 ]
 
 const STEPS = ['Contacting demo payment gateway', 'Confirming transaction', 'Finishing up']
+
+const MAIL_STATUS = (state, email) =>
+  ({
+    none: 'Previewed below, not sent',
+    sending: 'Sending…',
+    sent: `Sent to ${email}`,
+    preview: 'Email server is in preview mode, saved but not delivered',
+    error: 'Could not reach the email server',
+  })[state]
 
 const newTxnId = () => 'DEMO-' + Math.random().toString(36).slice(2, 10).toUpperCase()
 
@@ -60,6 +71,7 @@ export default function Checkout({ donation, onEdit, onFinish }) {
   const [outcome, setOutcome] = useState('success')
   const [step, setStep] = useState(0)
   const [txn, setTxn] = useState(null)
+  const [mail, setMail] = useState('none')
   const timers = useRef([])
 
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
@@ -75,8 +87,19 @@ export default function Checkout({ donation, onEdit, onFinish }) {
       setTimeout(() => setStep(2), 1800),
       setTimeout(() => {
         if (outcome === 'success') {
-          setTxn({ id: newTxnId(), at: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) })
+          const t = { id: newTxnId(), at: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) }
+          setTxn(t)
           setPhase('success')
+          if (botEnabled) {
+            setMail('sending')
+            sendThankYou({
+              donation: { fname: donation.fname, lname: donation.lname, email: donation.email, amount: donation.amount, pan: maskPan(donation.pan) },
+              txn: t,
+              method,
+            })
+              .then((r) => setMail(r.state === 'sent' ? 'sent' : 'preview'))
+              .catch(() => setMail('error'))
+          }
         } else {
           setPhase('failed')
         }
@@ -187,7 +210,7 @@ export default function Checkout({ donation, onEdit, onFinish }) {
                   </div>
                   <div>
                     <dt>Thank-you email</dt>
-                    <dd>Previewed below, not sent</dd>
+                    <dd>{MAIL_STATUS(mail, donation.email)}</dd>
                   </div>
                 </dl>
                 <div className="result-actions">
@@ -222,7 +245,12 @@ export default function Checkout({ donation, onEdit, onFinish }) {
         </div>
       </div>
 
-      {phase === 'success' && txn && <EmailPreview email={buildReceiptEmail({ donation, txn, method })} />}
+      {phase === 'success' && txn && (
+        <>
+          <BillBot donation={donation} txn={txn} method={method} />
+          <EmailPreview email={buildReceiptEmail({ donation, txn, method })} status={mail} />
+        </>
+      )}
     </div>
   )
 }
