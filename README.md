@@ -22,6 +22,7 @@ Built with Vite, React 19 and Framer Motion. There is no router or backend. The 
 - Projects with Health / Education filters and cards that expand in place
 - "What your gift does" amount picker that fills the donation form
 - Donation form with the PAN rule: required above ₹2000, format `ABCDE1234F`
+- Demo checkout (`src/components/Checkout.jsx`): a valid "Submit Application" opens an in-place checkout with UPI / Card / Net banking tabs, a simulated processing step, and a success or failure result with a demo transaction ID. Payment fields are pre-filled and read-only, so nobody can type real card details into it
 - Blog post, newsletter signup, copy-to-clipboard for bank and contact details
 
 ## Where things live
@@ -33,6 +34,6 @@ Built with Vite, React 19 and Framer Motion. There is no router or backend. The 
 
 ## Important
 
-The donation form and newsletter validate input but are not connected to a payment gateway, database or email service. Nothing is sent, and the page says so. Connect them to Wix Forms / Wix Payments or your own backend before taking real donations.
+The checkout is a demo. No payment gateway, database or email service is connected, nothing is sent or saved, and the page says so. The newsletter signup works the same way. To take real donations, replace `Checkout.jsx` with a real gateway (for example Razorpay, which handles UPI, cards and net banking for Indian NGOs) behind your own backend, or use Wix Payments / Wix Forms.
 
 The timeline dates come from the live site's story and registration details. "Before 2019" events have no year on the original site, so they are labelled by event, not date.

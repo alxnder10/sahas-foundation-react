@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BANK, CONTACT, IMPACT, PAN_LIMIT } from '../data'
 import { copyText } from './copy'
+import Checkout from './Checkout'
 import Icon from './Icon'
 import Reveal from './Reveal'
 
@@ -125,15 +126,12 @@ function Passbook() {
   )
 }
 
-function DonateForm({ amount, setAmount }) {
-  const [v, setV] = useState(EMPTY)
+function DonateForm({ amount, setAmount, v, setV, onValid }) {
   const [errors, setErrors] = useState({})
-  const [done, setDone] = useState(false)
   const values = { ...v, amount }
   const needsPan = Number(amount) > PAN_LIMIT
 
   const set = (key) => (e) => {
-    setDone(false)
     if (key === 'amount') setAmount(e.target.value)
     else setV((prev) => ({ ...prev, [key]: key === 'pan' ? e.target.value.toUpperCase() : e.target.value }))
   }
@@ -143,8 +141,8 @@ function DonateForm({ amount, setAmount }) {
     const found = validate(values)
     setErrors(found)
     const first = ORDER.find((k) => found[k])
-    setDone(!first)
     if (first) document.getElementById(first)?.focus()
+    else onValid({ ...values, pan: values.pan.trim().toUpperCase() })
   }
 
   const attrs = (id) => ({ id, value: values[id], onChange: set(id), 'aria-invalid': errors[id] ? 'true' : 'false', 'aria-describedby': errors[id] ? id + '-err' : undefined })
@@ -198,16 +196,7 @@ function DonateForm({ amount, setAmount }) {
       <button className="btn btn-primary" type="submit">
         Submit Application
       </button>
-      <p className="form-note">This form checks your details but is not connected to a payment gateway or inbox yet. Nothing is sent or charged.</p>
-
-      <AnimatePresence>
-        {done && (
-          <motion.div className="confirm" role="status" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <Icon name="check" size={16} strokeWidth={2.4} />
-            <span>Your details look valid, but online payment isn't set up yet. To donate now, use the bank transfer details on this page.</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <p className="form-note">Submitting opens a demo checkout. No real payment is taken and nothing is saved or sent. To donate for real, use the bank transfer details on this page.</p>
     </form>
   )
 }
@@ -220,38 +209,68 @@ const MINI = [
 
 export default function Contact() {
   const [amount, setAmount] = useState('')
+  const [v, setV] = useState(EMPTY)
+  const [donation, setDonation] = useState(null)
+
+  const toTop = () => requestAnimationFrame(() => document.getElementById('donate')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  const startCheckout = (d) => {
+    setDonation(d)
+    toTop()
+  }
+  const backToForm = () => {
+    setDonation(null)
+    toTop()
+  }
+  const finish = () => {
+    setDonation(null)
+    setAmount('')
+    setV(EMPTY)
+    document.getElementById('top')?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   return (
     <section id="donate">
       <div className="wrap">
-        <Reveal className="section-head">
-          <span className="eyebrow">Contact Us</span>
-          <h2>Take a part and help us grow</h2>
-          <p>Online Transfer. For deposits being made in ₹ INR. All Indian deposits qualify for 80G tax exemption.</p>
-        </Reveal>
-
-        <div className="donate-grid">
-          <Reveal className="donate-left">
-            <Impact amount={amount} setAmount={setAmount} />
-            <Passbook />
-          </Reveal>
-          <Reveal delay={0.1}>
-            <DonateForm amount={amount} setAmount={setAmount} />
-          </Reveal>
-        </div>
-
-        <div className="mini-grid">
-          {MINI.map((m, i) => (
-            <Reveal key={m.title} delay={i * 0.08} className="mini-card">
-              <span className="tag mono">{m.tag}</span>
-              <h3>{m.title}</h3>
-              <p>{m.text}</p>
-              <a href={m.href} className="btn btn-line">
-                {m.cta}
-              </a>
+        {donation ? (
+          <>
+            <div className="section-head">
+              <span className="eyebrow">Checkout · demo</span>
+              <h2>Complete your donation</h2>
+            </div>
+            <Checkout donation={donation} onEdit={backToForm} onFinish={finish} />
+          </>
+        ) : (
+          <>
+            <Reveal className="section-head">
+              <span className="eyebrow">Contact Us</span>
+              <h2>Take a part and help us grow</h2>
+              <p>Online Transfer. For deposits being made in ₹ INR. All Indian deposits qualify for 80G tax exemption.</p>
             </Reveal>
-          ))}
-        </div>
+
+            <div className="donate-grid">
+              <Reveal className="donate-left">
+                <Impact amount={amount} setAmount={setAmount} />
+                <Passbook />
+              </Reveal>
+              <Reveal delay={0.1}>
+                <DonateForm amount={amount} setAmount={setAmount} v={v} setV={setV} onValid={startCheckout} />
+              </Reveal>
+            </div>
+
+            <div className="mini-grid">
+              {MINI.map((m, i) => (
+                <Reveal key={m.title} delay={i * 0.08} className="mini-card">
+                  <span className="tag mono">{m.tag}</span>
+                  <h3>{m.title}</h3>
+                  <p>{m.text}</p>
+                  <a href={m.href} className="btn btn-line">
+                    {m.cta}
+                  </a>
+                </Reveal>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </section>
   )
